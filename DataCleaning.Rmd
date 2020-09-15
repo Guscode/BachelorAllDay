@@ -1,0 +1,9 @@
+---
+title: "DataCleaning"
+output: html_document
+---
+
+```{r}
+df <- read.csv("Merged_Data_060820 (1).txt", sep="\t")
+```
+
