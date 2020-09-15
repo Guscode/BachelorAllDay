@@ -5,5 +5,11 @@ output: html_document
 
 ```{r}
 df <- read.csv("Merged_Data_060820 (1).txt", sep="\t")
+
+summary(as.factor(df$Backchannel))
+summary(as.factor(df$Task))
+
+bc <- df[df$Backchannel==1,]
+summary(as.factor(df[df$Language=="Dansk",]$Backchannel))
 ```
 
