@@ -1,0 +1,73 @@
+---
+title: "Analyses"
+output: html_document
+---
+
+```{r}
+p_load(e1071)
+p_load(tm)
+p_load(parallelSVM)
+
+#Load Data
+df_test <- read.csv("df_test_dansk.csv")
+df_test$Transcription <- as.character(df_test$Transcription)
+
+###PARTITIONING
+training.samples <- df_test$Backchannel %>%
+  createDataPartition(p = 0.85, list = FALSE)
+
+train.data  <- df_test[training.samples, ]
+
+###TEST_DATA
+test.data <- df_test[-training.samples, ]
+corp_t <- corpus(test.data$Transcription, text_field = "Reviews")
+
+dtm_t <- dfm(corp_t)
+dtm_t <- dfm_trim(dtm_t, min_termfreq = 10, verbose = TRUE)
+
+dtm_t <- convert(dtm_t, to="tm")
+
+dtm_df_t <- as.data.frame(as.matrix(dtm_t))
+dtm_df_t$binary <- test.data$Backchannel
+
+###
+corp <- corpus(train.data$Transcription, text_field = "Reviews")
+
+dtm <- dfm(corp)
+dtm <- dfm_trim(dtm, min_termfreq = 25, verbose = TRUE)
+
+dtm <- convert(dtm, to="tm")
+
+dtm_df <- as.data.frame(as.matrix(dtm))
+dtm_df <- dtm_df[,names(dtm_df) %in% names(dtm_df_t)]
+dtm_df$binary <- train.data$Backchannel
+
+# classifier <-  svm(formula = binary~., 
+#                  data = dtm_df, 
+#                  type = 'C-classification', 
+#                  kernel = 'linear') 
+
+classifier <- parallelSVM(binary~., 
+            data = dtm_df,
+						numberCores = 4, samplingSize = 0.2, 
+ 						probability = TRUE, gamma=0.1, cost = 10, 
+                 type = 'C-classification', 
+                 kernel = 'linear')
+
+results_df <- data.frame(binary = dtm_df_t$binary, 
+                         svm_pred =predict(classifier,dtm_df_t)) 
+
+results_df$svm_pred <- factor(results_df$svm_pred, levels = c("1","0"))
+results_df$binary <- factor(results_df$binary, levels = c("1","0"))
+
+cfm_svm <- confusionMatrix(
+  results_df$svm_pred,
+  results_df$binary,
+  positive = NULL,
+  dnn = c("final", "binary"),
+  prevalence = NULL,
+  mode = "sens_spec"
+)
+
+cfm_svm
+```

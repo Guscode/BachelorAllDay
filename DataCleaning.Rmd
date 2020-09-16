@@ -2,14 +2,45 @@
 title: "DataCleaning"
 output: html_document
 ---
+```{r}
+
+library(pacman)
+p_load(readxl,retistruct)
+p_load("quanteda")
+p_load("ggplot2")
+p_load("tidyverse")
+p_load("tidytext")
+p_load("tidyr")
+p_load("readtext")
+p_load("stringr")
+p_load("stm")
+p_load("topicmodels")
+p_load("beepr")
+p_load("stringr")
+p_load("DataCombine")
+p_load(stringr)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(readr)
+p_load(caret, ROCR, MuMIn)
+p_load(wordcloud)
+```
+
+
 
 ```{r}
 df <- read.csv("Merged_Data_060820 (1).txt", sep="\t")
-
+df2 <- read.csv("study_17_081119 (1).txt", sep="/")
+df2$Backchannel <- ifelse(df2$Backchannel==1,1,0)
 summary(as.factor(df$Backchannel))
 summary(as.factor(df$Task))
 
 bc <- df[df$Backchannel==1,]
 summary(as.factor(df[df$Language=="Dansk",]$Backchannel))
+
+df_test <- df%>% filter(Language=="Dansk") %>% select(Transcription, Backchannel) 
+write.csv(df_test,"df_test_dansk.csv", row.names=F)
 ```
 
