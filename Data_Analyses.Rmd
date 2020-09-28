@@ -8,6 +8,8 @@ p_load(e1071)
 p_load(tm)
 p_load(parallelSVM)
 
+summary(as.factor(df_test$Backchannel))
+
 #Load Data
 df_test <- read.csv("df_test_dansk.csv")
 df_test$Transcription <- as.character(df_test$Transcription)

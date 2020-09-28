@@ -31,12 +31,14 @@ p_load(wordcloud)
 
 
 ```{r}
+library(tidyverse)
 df <- read.csv("Merged_Data_060820 (1).txt", sep="\t")
 df2 <- read.csv("study_17_081119 (1).txt", sep="/")
 df2$Backchannel <- ifelse(df2$Backchannel==1,1,0)
 summary(as.factor(df$Backchannel))
 summary(as.factor(df$Task))
-
+df %>% group_by(Task, Language) %>% summarise(d=n())
+summary(as.factor(df$Repair))
 bc <- df[df$Backchannel==1,]
 summary(as.factor(df[df$Language=="Dansk",]$Backchannel))
 
