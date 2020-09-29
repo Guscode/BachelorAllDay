@@ -42,7 +42,7 @@ summary(as.factor(df$Repair))
 bc <- df[df$Backchannel==1,]
 summary(as.factor(df[df$Language=="Dansk",]$Backchannel))
 
-df_test <- df%>% filter(Language=="Dansk") %>% select(Transcription, Backchannel) 
+df_test <- df%>% filter(Language=="Dansk") %>% select(Transcription, Backchannel, Pair) 
 write.csv(df_test,"df_test_dansk.csv", row.names=F)
 ```
 

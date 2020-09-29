@@ -4,6 +4,7 @@ output: html_document
 ---
 
 ```{r}
+library(pacman)
 p_load(e1071)
 p_load(tm)
 p_load(parallelSVM)
@@ -13,15 +14,15 @@ summary(as.factor(df_test$Backchannel))
 #Load Data
 df_test <- read.csv("df_test_dansk.csv")
 df_test$Transcription <- as.character(df_test$Transcription)
-
+pairs <- levels(as.factor(df_test$Pair))
+pairs <- as.character(pairs)
+pairs <- sample(pairs, 31)
 ###PARTITIONING
-training.samples <- df_test$Backchannel %>%
-  createDataPartition(p = 0.85, list = FALSE)
-
-train.data  <- df_test[training.samples, ]
+train.data  <- df_test[df_test$Pair %in% pairs, ]
 
 ###TEST_DATA
-test.data <- df_test[-training.samples, ]
+test.data <- df_test[!(df_test$Pair %in% pairs), ]
+
 corp_t <- corpus(test.data$Transcription, text_field = "Reviews")
 
 dtm_t <- dfm(corp_t)
