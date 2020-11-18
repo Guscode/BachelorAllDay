@@ -26,23 +26,181 @@ library(lubridate)
 library(readr)
 p_load(caret, ROCR, MuMIn)
 p_load(wordcloud)
+p_load(groupdata2)
 ```
 
 
 
 ```{r}
 library(tidyverse)
-df <- read.csv("Merged_Data_060820 (1).txt", sep="\t")
-df2 <- read.csv("study_17_081119 (1).txt", sep="/")
-df2$Backchannel <- ifelse(df2$Backchannel==1,1,0)
-summary(as.factor(df$Backchannel))
-summary(as.factor(df$Task))
-df %>% group_by(Task, Language) %>% summarise(d=n())
-summary(as.factor(df$Repair))
-bc <- df[df$Backchannel==1,]
-summary(as.factor(df[df$Language=="Dansk",]$Backchannel))
+df <- read_delim("Merged_Data_060820 (1).txt", delim="\t")
+df2 <- read_delim("study_17_081119.txt", delim="/")
 
-df_test <- df%>% filter(Language=="Dansk") %>% select(Transcription, Backchannel, Pair) 
-write.csv(df_test,"df_test_dansk.csv", row.names=F)
-```
+df <- df %>% 
+  mutate(ID = paste(Pair, Session, sep = "_")) %>%  
+  filter(ID != "1_2") #removing session containing both danish and norwegian, as well as containing far more utterances than other sessions
+
+  
+#adding missing columns
+df2 <- df2 %>% 
+  mutate(Language = "Dansk",
+         ID = paste(Study, Pair, sep = "_")) #creating unique pair ID
+
+#Ensuring data classes are consistent between dataframes
+df$Pair <- as.character(df$Pair)
+df$starttime <- as.character(df$starttime)
+df$endtime <- as.character(df$endtime)
+df$Backchannel <- as.character(df$Backchannel)
+df$Backchannel_alignment <- as.character(df$Backchannel_alignment)
+df2$Task <- as.character(df2$Task)
+df2$Pair <- as.character(df2$Pair)
+
+#bind rows with common columns
+df_unite <- bind_rows(
+  df[,colnames(df)%in%colnames(df2)],
+  df2[colnames(df[,colnames(df)%in%colnames(df2)])]
+)
+
+#remove potential NAs in pairs
+df_unite <- df_unite %>% 
+  filter(!is.na(df_unite$Pair))
+
+#recode mistakes in data
+df_unite$Backchannel[df_unite$Backchannel %in% c("x","X", "x (ja)")] <- 1 #x was not to be used in coding scheme 
+df_unite$Backchannel[is.na(df_unite$Backchannel)] <- 0 #the absence 
+df_unite$Backchannel_alignment[is.na(df_unite$Backchannel_alignment)] <- 0
+df_unite$Backchannel_alignment[df_unite$Backchannel_alignment %in% c("x","X")] <- 1
+
+df_unite$Open_repair[is.na(df_unite$Open_repair)] <- 0
+df_unite$Restricted_repair[is.na(df_unite$Restricted_repair)] <- 0
+df_unite$Restricted_solution[is.na(df_unite$Restricted_solution)] <- 0
+df_unite$OIOR[is.na(df_unite$OIOR)] <- 0
+
+
+df_unite$Task[!df_unite$Task %in% c("Spontaneous", "Task")] <- "Task"
+
+for (i in seq_along(df_unite$Pair)){
+  if(df_unite$Backchannel_alignment[i] == 1){
+    df_unite$Backchannel[i] <- 1
+  }
+}
+
+for (i in seq_along(df_unite$Pair)){
+  if(df_unite$Open_repair[i] == 1){
+    df_unite$Repair[i] <- 1
+  }
+  if(df_unite$Restricted_repair[i] == 1){
+    df_unite$Repair[i] <- 1
+  }
+  if(df_unite$Restricted_solution[i] == 1){
+    df_unite$Repair[i] <- 1
+  }
+  if(df_unite$OIOR[i] == 1){
+    df_unite$Repair[i] <- 1
+  }
+}
+
+summary(as.factor(df_unite$Open_repair))
+summary(as.factor(df_unite$Restricted_repair))
+summary(as.factor(df_unite$Restricted_solution))
+summary(as.factor(df_unite$OIOR))
+
+
+
+
+summary(as.factor(df_unite$Backchannel_alignment))
+summary(as.factor(df_unite$Backchannel))
+summary(as.factor(df_unite$Repair))
+summary(as.factor(df_unite$Task))
+
+unique(df_DK$ID)
+
+df_unite %>% group_by(Backchannel, Language) %>% summarise(d=n())
+df_unite %>% group_by(Repair, Language) %>% summarise(d=n())
+
+
+df_unite <- df_unite %>% 
+  group_by(ID) %>% 
+  mutate(int_lead = lead(Interlocutor)) %>% 
+  ungroup()
+
+
+df_unite$change <- ifelse(df_unite$Interlocutor == df_unite$int_lead, 0, 1)
+changes <- which(df_unite$change == 1)
+
+k_sequence <- df_unite %>% 
+  mutate(index = 1:nrow(df_unite))
+
+df_unite$preceeding <- ""
+for (i in seq_along(changes)){
+  k_seq <- k_sequence %>% 
+    filter(index>changes[i] & index<=changes[i+1])
+  for (k in seq_along(k_seq$Pair)){
+  #if(df_unite$Backchannel[k_seq$index[k]] == 1){
+    df_unite$preceeding[k_seq$index[k]] <- df_unite$Transcription[changes[i]]
+   # }
+  }
+}
+
+na_changes <- which(is.na(df_unite$int_lead))
+for (i in seq_along(na_changes)){
+  j <- na_changes[i]+1
+  while(df_unite$Interlocutor[j] == df_unite$Interlocutor[na_changes[i]+1]){
+    df_unite$preceeding[j] <- ""
+    j <- j+1
+  }
+}
+
+
+changes_next <- as.integer(changes + 1)
+
+df_unite$following <- ""
+for (i in 2:length(changes_next)){
+  k_seq <- k_sequence %>% 
+    filter(index<changes_next[i] & index>=changes_next[i-1])
+  for (k in seq_along(k_seq$Pair)){
+  #if(df_unite$Backchannel[k_seq$index[k]] == 1){
+    df_unite$following[k_seq$index[k]] <- df_unite$Transcription[changes_next[i]]
+   # }
+  }
+}
+
+df_unite$following[1:(changes_next[1]-1)] <- df_unite$Transcription[changes_next[1]]
+
+na_changes <- which(is.na(df_unite$int_lead))
+for (i in seq_along(na_changes)){
+  j <- na_changes[i]
+  while(df_unite$Interlocutor[j] == df_unite$Interlocutor[na_changes[i]]){
+    df_unite$following[j] <- ""
+    j <- j-1
+  }
+}
+
+
+pair_inspection <- tibble()
+for (i in unique(df_unite$ID)){
+  pair_inspection <- bind_rows(pair_inspection, df_unite[df_unite$ID == i,][1:10,])
+}
+
+pair_inspection <- pair_inspection %>% 
+  select(ID, Language, Transcription)
+
+length(unique(df_unite$Pair))
+
+
+
+
+df_DK <- df_unite %>% 
+  filter(Language == "Dansk")
+df_DK$index <- 1:nrow(df_DK)
+
+write.csv(df_DK, "df_DK.csv", fileEncoding = "UTF-8")
+
+df_NO <- df_unite %>% 
+  filter(Language == "Norsk")
+df_NO$index <- 1:nrow(df_NO)
+
+write.csv(df_NO, "df_NO.csv", fileEncoding = "UTF-8")
+
+````
 
