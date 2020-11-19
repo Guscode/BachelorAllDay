@@ -349,9 +349,65 @@ df_NO %>% dplyr::group_by(Pair) %>% dplyr::summarise(rep=sum(Backchannel), n=n()
 df_DK %>% dplyr::group_by(Pair) %>% dplyr::summarise(bc=sum(Backchannel, na.rm=T), n=n()) %>% mutate(percent = rep/n*100)
 
 df_DK$index <- 1:nrow(df_DK)
+
+df_DK <- read_csv("df_DK.csv")
+
+df_DK2 <- df_DK %>% 
+  group_by(Pair) %>% 
+  summarise(n_utt = n(), n_rep = sum(Repair)) %>% 
+  mutate(freq = n_rep/n_utt) %>% 
+  left_join(df_DK)
+
+df_DK2$Pair <- as.factor(df_DK2$Pair)
+
+df_DK <- groupdata2::fold(df_DK2, k = 10,
+                 id_col = "Pair",
+                 num_col = "n_utt")
+
+(Balance_df <- df_DK %>% 
+  group_by(.folds, Pair) %>% 
+  summarise(u = n(),
+            rep = sum(Repair))  %>% 
+  ungroup(Pair) %>% 
+  summarise(sum_utt = sum(u, na.rm = T),
+            sum_rep = sum(rep, na.rm = T),
+            n_pair = max(seq_along(unique(Pair)))) %>%  
+  mutate(group_freq = sum_rep/sum_utt))
+sum(Balance_df$n_pair)
+mean(Balance_df$group_freq)
+sd(Balance_df$group_freq)
+
+
 write.csv(df_DK, "df_DK.csv", fileEncoding = "UTF-8")
 
+
 df_NO$index <- 1:nrow(df_NO)
+
+df_NO2 <- df_NO %>% 
+  group_by(Pair) %>% 
+  summarise(n_utt = n(), n_rep = sum(Repair)) %>% 
+  mutate(freq = n_rep/n_utt) %>% 
+  left_join(df_NO)
+
+df_NO2$Pair <- as.factor(df_NO2$Pair)
+
+df_NO <- groupdata2::fold(df_NO2, k = 10,
+                 id_col = "Pair",
+                 num_col = "n_utt")
+
+(Balance_df <- df_NO %>% 
+  group_by(.folds, Pair) %>% 
+  summarise(u = n(),
+            rep = sum(Repair))  %>% 
+  ungroup(Pair) %>% 
+  summarise(sum_utt = sum(u, na.rm = T),
+            sum_rep = sum(rep, na.rm = T),
+            n_pair = max(seq_along(unique(Pair)))) %>%  
+  mutate(group_freq = sum_rep/sum_utt))
+sum(Balance_df$n_pair)
+mean(Balance_df$group_freq)
+sd(Balance_df$group_freq)
+
 write.csv(df_NO, "df_NO.csv", fileEncoding = "UTF-8")
 ```
 
