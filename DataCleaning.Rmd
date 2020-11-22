@@ -350,7 +350,6 @@ df_DK %>% dplyr::group_by(Pair) %>% dplyr::summarise(bc=sum(Backchannel, na.rm=T
 
 df_DK$index <- 1:nrow(df_DK)
 
-df_DK <- read_csv("df_DK.csv")
 
 df_DK2 <- df_DK %>% 
   group_by(Pair) %>% 
@@ -363,6 +362,14 @@ df_DK2$Pair <- as.factor(df_DK2$Pair)
 df_DK <- groupdata2::fold(df_DK2, k = 10,
                  id_col = "Pair",
                  num_col = "n_utt")
+
+
+df_DK <- df_DK %>% 
+  dplyr::group_by(ID) %>% 
+  dplyr::mutate(lex_follow = lead(lex_align),
+                struc_follow = lead(struc_align)) %>% 
+  ungroup()
+  
 
 (Balance_df <- df_DK %>% 
   group_by(.folds, Pair) %>% 
@@ -378,7 +385,8 @@ mean(Balance_df$group_freq)
 sd(Balance_df$group_freq)
 
 
-write.csv(df_DK, "df_DK.csv", fileEncoding = "UTF-8")
+#write.csv(df_DK, "df_DK.csv", fileEncoding = "UTF-8")
+
 
 
 df_NO$index <- 1:nrow(df_NO)
@@ -408,6 +416,13 @@ sum(Balance_df$n_pair)
 mean(Balance_df$group_freq)
 sd(Balance_df$group_freq)
 
-write.csv(df_NO, "df_NO.csv", fileEncoding = "UTF-8")
+df_NO <- df_NO %>% 
+  dplyr::group_by(ID) %>% 
+  dplyr::mutate(lex_follow = lead(lex_align),
+                struc_follow = lead(struc_align)) %>% 
+  ungroup()
+
+
+#write.csv(df_NO, "df_NO.csv", fileEncoding = "UTF-8")
 ```
 
