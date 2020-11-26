@@ -5,12 +5,12 @@ output: html_document
 ###Creating classifier for backchanneling in Danish
 ```{r}
 #loading packages
+install.packages("pacman")
 library(pacman)
 p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 
 #loading data
-dk_bc_url <- getURL("https://raw.githubusercontent.com/Guscode/BachelorAllDay/master/df_DK.csv")
-dk_bc <- read.csv(text = dk_bc_url)
+dk_bc <- read.csv("df_DK.csv")
 dk_bc$binary <- dk_bc$Backchannel
 ```
 
@@ -50,14 +50,14 @@ rf_res <- list()
 Looping
 ```{r}
 #Creating list of pairs
-pairs <- levels(as.factor(dk_bc$Pair))
+folds <- levels(as.factor(dk_bc$.folds))
 
 #Looping through all pairs
-for(i in 1:length(pairs)){
+for(i in 1:length(folds)){
   
   #Splitting train and test data
-  train.data <- dk_bc[!dk_bc$Pair==pairs[1],]
-  test.data <- dk_bc[dk_bc$Pair==pairs[1],]
+  train.data <- dk_bc[!dk_bc$.folds==folds[i],]
+  test.data <- dk_bc[dk_bc$.folds==folds[i],]
   
   #Creating DTM from test data
   freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
@@ -91,10 +91,10 @@ for(i in 1:length(pairs)){
   
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
-                data = dtm_df, importance=TRUE,proximity=TRUE) #CHECK
+                data = dtm_df, importance=TRUE,proximity=F) #CHECK
 
   #Saving results
-  results_df <- data.frame(binary = dtm_df_t$binary 
+  results_df <- data.frame(binary = dtm_df_t$binary, 
                          rf_pred =predict(rf,dtm_df_t),
                          index =test.data$index) 
   
@@ -123,6 +123,8 @@ for(i in 1:length(pairs)){
   #saving confusion matrices
   rf_res[[i]] <- cfm_rf$table
 }
+
+save(rf_df,preds_index,importance_df,rf_res, file = "bc_dk.rda")
 ```
  
  
