@@ -9,8 +9,7 @@ library(pacman)
 p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 
 #loading data
-dk_bc_url <- getURL("https://raw.githubusercontent.com/Guscode/BachelorAllDay/master/df_DK.csv")
-dk_bc <- read.csv(text = dk_bc_url)
+dk_bc <- read.csv("df_DK.csv")
 dk_bc$binary <- dk_bc$Backchannel
 ```
 
@@ -50,16 +49,15 @@ rf_res <- list()
 
 Looping
 ```{r}
-#Creating list of pairs
-pairs <- levels(as.factor(dk_bc$Pair))[1:5]
-dk_bc <- dk_bc[dk_bc$Pair %in% pairs,]
+#Creating list of folds
+folds <- levels(as.factor(dk_bc$.folds))
 
 #Looping through all pairs
-for(i in 1:length(pairs)){
+for(i in 1:length(folds)){
   
   #Splitting train and test data
-  train.data <- dk_bc[!dk_bc$Pair==pairs[i],]
-  test.data <- dk_bc[dk_bc$Pair==pairs[i],]
+  train.data <- dk_bc[!dk_bc$.folds==folds[i],]
+  test.data <- dk_bc[dk_bc$.folds==folds[i],]
   
   #Creating DTM from test data
   freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
@@ -94,7 +92,7 @@ for(i in 1:length(pairs)){
   dtm_df <- as.data.frame(as.matrix(dtm))
 
   #Creating dtm from previous line
-  corp_prev <- corpus(as.character(train.data$preceeding), text_field = "Reviews")
+  corp_prev <- corpus(as.character(train.data$preceeding))
   dtm_prev <- dfm(corp_prev)
   dtm_prev <- dfm_trim(dtm_prev, min_termfreq = freq99, verbose = TRUE)
   dtm_prev <- convert(dtm_prev, to="tm")
@@ -120,13 +118,8 @@ for(i in 1:length(pairs)){
   
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
-                data = dtm_df, importance=TRUE,proximity=TRUE) #CHECK
+                data = dtm_df, importance=TRUE,proximity=F) #CHECK
 
-  rf <- e1071::svm(formula = binary~., 
-                  data = dtm_df, 
-                  type = 'C-classification', 
-                  kernel = 'linear')
-  
   #Saving results
   results_df <- data.frame(binary = dtm_df_t$binary, 
                          rf_pred =predict(rf,dtm_df_t),
