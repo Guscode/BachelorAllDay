@@ -151,13 +151,7 @@ for(i in 1:length(folds)){
   rf_res[[i]] <- cfm_rf$table
 }
 
-```
- 
- 
-```{r}
-dk_bc$resis <- paste(dk_bc$binary.x, dk_bc$rf_pred, sep="")
-dk_bc_prev_res <- dk_bc
-dk_bc %>% dplyr::group_by(resis) %>% dplyr::summarise(n =n(), n_align = sum(Backchannel_alignment))
+save(rf_df,preds_index, importance_df, rf_res,file =  "bc_dk_prev.rda")
 
 ```
  
