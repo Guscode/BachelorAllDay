@@ -9,8 +9,7 @@ library(pacman)
 p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 
 #loading data
-no_bc_url <- getURL("https://raw.githubusercontent.com/Guscode/BachelorAllDay/master/df_NO.csv")
-no_bc <- read.csv(text = no_bc_url)
+no_bc <- read.csv("df_NO.csv")
 no_bc$binary <- no_bc$Backchannel
 ```
 
@@ -51,14 +50,14 @@ rf_res <- list()
 Looping
 ```{r}
 #Creating list of pairs
-pairs <- levels(as.factor(no_bc$Pair))
+folds <- levels(as.factor(no_bc$.folds))
 
 #Looping through all pairs
-for(i in 1:length(pairs)){
+for(i in 1:length(folds)){
   
   #Splitting train and test data
-  train.data <- no_bc[!no_bc$Pair==pairs[i],]
-  test.data <- no_bc[no_bc$Pair==pairs[i],]
+  train.data <- no_bc[!no_bc$.folds==folds[i],]
+  test.data <- no_bc[no_bc$.folds==folds[i],]
   
   #Creating DTM from test data
   freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
@@ -113,9 +112,6 @@ for(i in 1:length(pairs)){
   if(length(which(names(dtm_df) %in% bad_rf)) !=0){
     dtm_df <- dtm_df[,-which(names(dtm_df) %in% bad_rf)]
   }
-  if(length(which(names(dtm_df) %in% bad_rf)) !=0){
-    dtm_df <- dtm_df[,-which(names(dtm_df) %in% bad_rf)]
-  }
   
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
@@ -151,6 +147,9 @@ for(i in 1:length(pairs)){
   #saving confusion matrices
   rf_res[[i]] <- cfm_rf$table
 }
+
+save(rf_df,preds_index, importance_df, rf_res,file =  "bc_no_prev.rda")
+
 ```
 
  
