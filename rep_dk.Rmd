@@ -13,11 +13,13 @@ p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 # dk_rep <- read.csv(text = dk_rep_url)
 dk_rep <- read_csv("df_DK.csv")
 dk_rep$binary <- dk_rep$Repair
+
 ```
 
 Cleaning text
 ```{r}
 #Removing punctuation and numbers, as Random Forest can't deal with them
+dk_rep$Transcription <-  gsub('\\?',' qmark',dk_rep$Transcription)
 dk_rep$Transcription <-  gsub('[[:punct:] ]+',' ',dk_rep$Transcription)
 dk_rep$Transcription <-  gsub('\\d+','tal',dk_rep$Transcription)
 ```
@@ -57,8 +59,8 @@ folds <- levels(as.factor(dk_rep$.folds))
 for(i in 1:length(folds)){
   
   #Splitting train and test data
-  train.data <- dk_bc[!dk_rep$.folds==folds[i],]
-  test.data <- dk_bc[dk_rep$.folds==folds[i],]
+  train.data <- dk_rep[!dk_rep$.folds==folds[i],]
+  test.data <- dk_rep[dk_rep$.folds==folds[i],]
   
   #Creating DTM from test data
   freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
@@ -92,10 +94,10 @@ for(i in 1:length(folds)){
   
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
-                data = dtm_df, importance=TRUE,proximity=TRUE) #CHECK
+                data = dtm_df, importance=TRUE,proximity=F) #CHECK
 
   #Saving results
-  results_df <- data.frame(binary = dtm_df_t$binary 
+  results_df <- data.frame(binary = dtm_df_t$binary, 
                          rf_pred =predict(rf,dtm_df_t),
                          index =test.data$index) 
   
@@ -124,6 +126,10 @@ for(i in 1:length(folds)){
   #saving confusion matrices
   rf_res[[i]] <- cfm_rf$table
 }
+
+save(rf_df,preds_index, importance_df, rf_res,file =  "rep_dk.rda")
+
+
 ```
  
  
