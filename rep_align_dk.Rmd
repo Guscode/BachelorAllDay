@@ -12,12 +12,16 @@ p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 # dk_rep_url <- getURL("https://raw.githubusercontent.com/Guscode/BachelorAllDay/master/df_DK.csv")
 # dk_rep <- read.csv(text = dk_rep_url)
 dk_rep <- read_csv("df_DK.csv")
+dk_rep$lex_follow <- ifelse(is.na(dk_rep$lex_follow), 0, dk_rep$lex_follow)
+dk_rep$struc_follow <- ifelse(is.na(dk_rep$struc_follow), 0, dk_rep$struc_follow)
+
 dk_rep$binary <- dk_rep$Repair
 ```
 
 Cleaning text
 ```{r}
 #Removing punctuation and numbers, as Random Forest can't deal with them
+dk_rep$Transcription <-  gsub('\\?',' qmark',dk_rep$Transcription)
 dk_rep$Transcription <-  gsub('[[:punct:] ]+',' ',dk_rep$Transcription)
 dk_rep$Transcription <-  gsub('\\d+','tal',dk_rep$Transcription)
 ```
@@ -52,7 +56,8 @@ Looping
 ```{r}
 #Creating list of fold
 folds <- levels(as.factor(dk_rep$.folds))
-
+sum(is.na(train.data$Transcription))
+i=1
 #Looping through all folds
 for(i in 1:length(folds)){
   
@@ -99,13 +104,15 @@ for(i in 1:length(folds)){
   if(length(which(names(dtm_df) %in% bad_rf)) !=0){
     dtm_df <- dtm_df[,-which(names(dtm_df) %in% bad_rf)]
   }
+
+  sum(is.na(dtm_df$lex_align))
   
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
-                data = dtm_df, importance=TRUE,proximity=TRUE) #CHECK
+                data = dtm_df, importance=TRUE,proximity=F) #CHECK
 
   #Saving results
-  results_df <- data.frame(binary = dtm_df_t$binary 
+  results_df <- data.frame(binary = dtm_df_t$binary, 
                          rf_pred =predict(rf,dtm_df_t),
                          index =test.data$index) 
   
@@ -134,6 +141,9 @@ for(i in 1:length(folds)){
   #saving confusion matrices
   rf_res[[i]] <- cfm_rf$table
 }
+
+
+
 ```
  
  

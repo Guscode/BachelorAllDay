@@ -17,6 +17,7 @@ dk_bc$binary <- dk_bc$Backchannel
 Cleaning text
 ```{r}
 #Removing punctuation and numbers, as Random Forest can't deal with them
+
 dk_bc$Transcription <-  gsub('[[:punct:] ]+',' ',dk_bc$Transcription)
 dk_bc$Transcription <-  gsub('\\d+','tal',dk_bc$Transcription)
 ```

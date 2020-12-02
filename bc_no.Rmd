@@ -9,8 +9,7 @@ library(pacman)
 p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 
 #loading data
-no_bc_url <- getURL("https://raw.githubusercontent.com/Guscode/BachelorAllDay/master/df_NO.csv")
-no_bc <- read.csv(text = no_bc_url)
+no_bc <- read.csv("df_NO.csv")
 no_bc$binary <- no_bc$Backchannel
 ```
 
@@ -123,6 +122,9 @@ for(i in 1:length(folds)){
   #saving confusion matrices
   rf_res[[i]] <- cfm_rf$table
 }
+
+save(rf_df,preds_index, importance_df, rf_res,file =  "bc_no.rda")
+
 ```
  
  
