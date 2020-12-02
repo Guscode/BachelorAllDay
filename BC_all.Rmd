@@ -212,6 +212,7 @@ for(i in 1:length(folds)){
   dtm_df_t$wordcount_prev <- test.data$wordcount_prev
   dtm_df_t$lex_align <- test.data$lex_align
   dtm_df_t$struc_align <- test.data$struc_align
+  dtm_df_t$overlap <- test.data$overlap
 
   #Creating DTM from training data
   freq99 <- round(0.001*nrow(train.data))
@@ -237,6 +238,7 @@ for(i in 1:length(folds)){
   dtm_df$wordcount_prev <- train.data$wordcount_prev
   dtm_df$lex_align <- train.data$lex_align
   dtm_df$struc_align <- train.data$struc_align
+  dtm_df$overlap <- train.data$overlap
 
   #Remove all columns random forest cant handle
   if(length(which(names(dtm_df) %in% bad_rf)) !=0){
@@ -493,6 +495,8 @@ for(i in 1:length(folds)){
   dtm_df_t$wordcount_prev <- test.data$wordcount_prev
   dtm_df_t$lex_align <- test.data$lex_align
   dtm_df_t$struc_align <- test.data$struc_align
+  dtm_df_t$overlap <- test.data$overlap
+
 
   #Creating DTM from training data
   freq99 <- round(0.001*nrow(train.data))
@@ -518,6 +522,7 @@ for(i in 1:length(folds)){
   dtm_df$wordcount_prev <- train.data$wordcount_prev
   dtm_df$lex_align <- train.data$lex_align
   dtm_df$struc_align <- train.data$struc_align
+  dtm_df$overlap <- train.data$overlap
 
   #Remove all columns random forest cant handle
   if(length(which(names(dtm_df) %in% bad_rf)) !=0){
