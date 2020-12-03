@@ -6,7 +6,7 @@ output: html_document
 ###Creating classifier for backchanneling in Danish
 ```{r}
 #loading packages
-install.packages("pacman")
+
 library(pacman)
 p_load(gtools, e1071, randomForest, RCurl, caret, tm, quanteda, tidyverse)
 
@@ -61,7 +61,7 @@ for(i in 1:length(folds)){
   test.data <- dk_bc[dk_bc$.folds==folds[i],]
   
   #Creating DTM from test data
-  freq99_t <- round(0.001*nrow(test.data)) #getting numeric value for using 99.9% most frequent words
+  freq99_t <- round(0.0*nrow(test.data)) #getting numeric value for using 99.9% most frequent words
   corp_t <- corpus(as.character(test.data$Transcription))
   dtm_t <- dfm(corp_t)
   dtm_t <- dfm_trim(dtm_t, min_docfreq = freq99_t, verbose = TRUE)
@@ -73,7 +73,7 @@ for(i in 1:length(folds)){
   dtm_df_t$wordcount <- test.data$wordcount
 
   #Creating DTM from training data
-  freq99 <- round(0.001*nrow(train.data))
+  freq99 <- round(0.01*nrow(train.data))
   corp <-corpus(as.character(train.data$Transcription))
   dtm <- dfm(corp)
   dtm <- dfm_trim(dtm, min_termfreq = freq99, verbose = TRUE)
@@ -90,6 +90,8 @@ for(i in 1:length(folds)){
     dtm_df <- dtm_df[,-which(names(dtm_df) %in% bad_rf)]
   }
   
+  print(paste("making random forest first bc, fold=", as.character(i), sep=" "))
+
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
                 data = dtm_df, importance=TRUE,proximity=F) #CHECK
@@ -190,7 +192,7 @@ for(i in 1:length(folds)){
   test.data <- dk_bc[dk_bc$.folds==folds[i],]
   
   #Creating DTM from test data
-  freq99_t <- round(0.001*nrow(test.data)) #getting numeric value for using 99% most frequent words
+  freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
   corp_t <- corpus(as.character(test.data$Transcription))
   dtm_t <- dfm(corp_t)
   dtm_t <- dfm_trim(dtm_t, min_docfreq = freq99_t, verbose = TRUE)
@@ -215,7 +217,7 @@ for(i in 1:length(folds)){
   dtm_df_t$overlap <- test.data$overlap
 
   #Creating DTM from training data
-  freq99 <- round(0.001*nrow(train.data))
+  freq99 <- round(0.01*nrow(train.data))
   corp <-corpus(as.character(train.data$Transcription))
   dtm <- dfm(corp)
   dtm <- dfm_trim(dtm, min_termfreq = freq99, verbose = TRUE)
@@ -266,7 +268,8 @@ for(i in 1:length(folds)){
   prevalence = NULL,
   mode = "sens_spec"
   )
-  
+  print(paste("making random forest second bc, fold=", as.character(i), sep=" "))
+
   #Saving performance metrics
   rf_df <- rbind(rf_df,c(cfm_rf$overall,cfm_rf$byClass))
   
@@ -344,7 +347,7 @@ for(i in 1:length(folds)){
   test.data <- no_bc[no_bc$.folds==folds[i],]
   
   #Creating DTM from test data
-  freq99_t <- round(0.001*nrow(test.data)) #getting numeric value for using 99% most frequent words
+  freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
   corp_t <- corpus(as.character(test.data$Transcription))
   dtm_t <- dfm(corp_t)
   dtm_t <- dfm_trim(dtm_t, min_docfreq = freq99_t, verbose = TRUE)
@@ -356,7 +359,7 @@ for(i in 1:length(folds)){
   dtm_df_t$wordcount <- test.data$wordcount
 
   #Creating DTM from training data
-  freq99 <- round(0.001*nrow(train.data))
+  freq99 <- round(0.01*nrow(train.data))
   corp <-corpus(as.character(train.data$Transcription))
   dtm <- dfm(corp)
   dtm <- dfm_trim(dtm, min_termfreq = freq99, verbose = TRUE)
@@ -372,11 +375,11 @@ for(i in 1:length(folds)){
   if(length(which(names(dtm_df) %in% bad_rf)) !=0){
     dtm_df <- dtm_df[,-which(names(dtm_df) %in% bad_rf)]
   }
-  
+  print(paste("making random forest third bc, fold=", as.character(i), sep=" "))
+
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
-                data = dtm_df, importance=TRUE,proximity=TRUE) #CHECK
-
+                data = dtm_df, importance=TRUE,proximity=F) #CHECK
   #Saving results
   results_df <- data.frame(binary = dtm_df_t$binary, 
                          rf_pred =predict(rf,dtm_df_t),
@@ -473,7 +476,7 @@ for(i in 1:length(folds)){
   test.data <- no_bc[no_bc$.folds==folds[i],]
   
   #Creating DTM from test data
-  freq99_t <- round(0.001*nrow(test.data)) #getting numeric value for using 99% most frequent words
+  freq99_t <- round(0.01*nrow(test.data)) #getting numeric value for using 99% most frequent words
   corp_t <- corpus(as.character(test.data$Transcription))
   dtm_t <- dfm(corp_t)
   dtm_t <- dfm_trim(dtm_t, min_docfreq = freq99_t, verbose = TRUE)
@@ -499,7 +502,7 @@ for(i in 1:length(folds)){
 
 
   #Creating DTM from training data
-  freq99 <- round(0.001*nrow(train.data))
+  freq99 <- round(0.01*nrow(train.data))
   corp <-corpus(as.character(train.data$Transcription))
   dtm <- dfm(corp)
   dtm <- dfm_trim(dtm, min_termfreq = freq99, verbose = TRUE)
@@ -507,7 +510,7 @@ for(i in 1:length(folds)){
   dtm_df <- as.data.frame(as.matrix(dtm))
 
   #Creating dtm from previous line
-  corp_prev <- corpus(as.character(train.data$preceeding), text_field = "Reviews")
+  corp_prev <- corpus(as.character(train.data$preceeding))
   dtm_prev <- dfm(corp_prev)
   dtm_prev <- dfm_trim(dtm_prev, min_termfreq = freq99, verbose = TRUE)
   dtm_prev <- convert(dtm_prev, to="tm")
@@ -528,10 +531,11 @@ for(i in 1:length(folds)){
   if(length(which(names(dtm_df) %in% bad_rf)) !=0){
     dtm_df <- dtm_df[,-which(names(dtm_df) %in% bad_rf)]
   }
-  
+  print(paste("making random forest fourth bc, fold=", as.character(i), sep=" "))
+
   #Running Random Forest classification
   rf <- randomForest(formula = as.factor(binary)~., 
-                data = dtm_df, importance=TRUE,proximity=TRUE) #CHECK
+                data = dtm_df, importance=TRUE,proximity=F) #CHECK
 
   #Saving results
   results_df <- data.frame(binary = dtm_df_t$binary, 
